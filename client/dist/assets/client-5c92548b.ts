@@ -30,6 +30,13 @@ class NumberLineDuelClient {
         this.setupChatListeners();
         this.setupNavigationListeners();
         this.requestGamesList();
+        
+        // Ensure menu is hidden on load
+        const mainNav = document.getElementById('mainNav');
+        if (mainNav) {
+            mainNav.classList.remove('open');
+            console.log('Menu initialized as hidden');
+        }
     }
 
     private loadPlayerData(): void {
