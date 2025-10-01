@@ -1,0 +1,210 @@
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    color: white;
+}
+
+.screen {
+    display: none;
+    padding: 20px;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.screen.active {
+    display: block;
+}
+
+h1 {
+    text-align: center;
+    margin-bottom: 2rem;
+    font-size: 3em;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+}
+
+.input-group {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 1rem;
+    justify-content: center;
+}
+
+input {
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    min-width: 200px;
+}
+
+button {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 8px;
+    background: #4CAF50;
+    color: white;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+button:hover {
+    background: #45a049;
+}
+
+button:disabled {
+    background: #cccccc;
+    cursor: not-allowed;
+}
+
+/* Game Screen Styles */
+.game-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    background: rgba(255,255,255,0.1);
+    padding: 1rem;
+    border-radius: 10px;
+}
+
+.target-display, .token-display {
+    font-size: 1.5em;
+    font-weight: bold;
+}
+
+.turn-indicator {
+    padding: 8px 16px;
+    background: #ffeb3b;
+    color: #333;
+    border-radius: 20px;
+    font-weight: bold;
+}
+
+.turn-indicator.your-turn {
+    background: #4CAF50;
+    color: white;
+}
+
+/* Number Line */
+.number-line {
+    position: relative;
+    height: 80px;
+    margin: 2rem 0;
+    background: rgba(255,255,255,0.1);
+    border-radius: 10px;
+}
+
+.line {
+    position: absolute;
+    top: 50%;
+    left: 20px;
+    right: 20px;
+    height: 4px;
+    background: white;
+    transform: translateY(-50%);
+}
+
+.token {
+    position: absolute;
+    top: 50%;
+    width: 30px;
+    height: 30px;
+    background: #ff5722;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    transition: left 0.5s ease-in-out;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+
+.target-marker {
+    position: absolute;
+    top: 50%;
+    width: 40px;
+    height: 40px;
+    background: #4CAF50;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+}
+
+/* Cards */
+.cards-container {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.card {
+    width: 80px;
+    height: 120px;
+    background: white;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5em;
+    font-weight: bold;
+    color: #333;
+    cursor: pointer;
+    transition: all 0.3s;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+}
+
+.card:active {
+    transform: translateY(0);
+}
+
+.card.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.card.positive { border-top: 4px solid #4CAF50; }
+.card.negative { border-top: 4px solid #f44336; }
+.card.multiply { border-top: 4px solid #2196F3; }
+
+.central-row, .player-hand, .opponent-info {
+    margin-bottom: 2rem;
+    background: rgba(255,255,255,0.1);
+    padding: 1rem;
+    border-radius: 10px;
+}
+
+.opponent-info .card {
+    background: #e0e0e0;
+}
+
+/* Game Over Screen */
+#gameOverScreen {
+    text-align: center;
+}
+
+#gameResult {
+    font-size: 2.5em;
+    margin-bottom: 2rem;
+}
+
+#playAgain {
+    font-size: 1.2em;
+    padding: 15px 30px;
+}

@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug - Number Line Duel</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="app">
+        <div id="lobby" class="screen active">
+            <h1>Number Line Duel - Debug Mode</h1>
+            <div id="debug-info">
+                <p>Loading...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const debugInfo = document.getElementById('debug-info');
+        
+        // Log any errors
+        window.addEventListener('error', (event) => {
+            console.error('Error:', event.error);
+            debugInfo.innerHTML += `<p style="color: red;">Error: ${event.message}</p>`;
+        });
+
+        // Test socket.io loading
+        debugInfo.innerHTML = '<p>Testing socket.io loading...</p>';
+        
+        // Load socket.io script
+        const script = document.createElement('script');
+        script.src = 'http://localhost:3001/socket.io/socket.io.js';
+        script.onload = () => {
+            debugInfo.innerHTML += '<p style="color: green;">✓ Socket.io loaded successfully</p>';
+            
+            // Test socket connection
+            if (typeof io !== 'undefined') {
+                debugInfo.innerHTML += '<p style="color: green;">✓ io is available</p>';
+                
+                try {
+                    const socket = io('http://localhost:3001');
+                    socket.on('connect', () => {
+                        debugInfo.innerHTML += '<p style="color: green;">✓ Socket connected successfully</p>';
+                    });
+                    socket.on('connect_error', (error) => {
+                        debugInfo.innerHTML += `<p style="color: red;">✗ Socket connection error: ${error}</p>`;
+                    });
+                } catch (error) {
+                    debugInfo.innerHTML += `<p style="color: red;">✗ Socket creation error: ${error}</p>`;
+                }
+            } else {
+                debugInfo.innerHTML += '<p style="color: red;">✗ io is not available</p>';
+            }
+        };
+        script.onerror = () => {
+            debugInfo.innerHTML += '<p style="color: red;">✗ Failed to load socket.io script</p>';
+        };
+        document.head.appendChild(script);
+    </script>
+</body>
+</html>
