@@ -10,6 +10,7 @@ export declare class UIManager {
     showGameOver(isWinner: boolean): void;
     private showScreen;
     updateGameState(gameState: GameState, playerId: string): void;
+    updatePlayerNames(gameState: GameState, playerId: string): void;
     private updateNumberLine;
     private updateCentralRow;
     private updatePlayerHand;

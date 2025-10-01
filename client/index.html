@@ -10,13 +10,31 @@
     <div id="app">
         <div id="lobby" class="screen active">
             <h1>Number Line Duel</h1>
-            <div class="input-group">
-                <input type="text" id="playerName" placeholder="Enter your name" maxlength="20">
-                <button id="createGame">Create Game</button>
-            </div>
-            <div class="input-group">
-                <input type="text" id="gameCode" placeholder="Game Code" maxlength="6">
-                <button id="joinGame">Join Game</button>
+            <div class="lobby-container">
+                <div class="lobby-section">
+                    <h2>🎯 Create New Game</h2>
+                    <div class="input-group">
+                        <input type="text" id="playerName" placeholder="Enter your name" maxlength="20">
+                    </div>
+                    <div class="input-group">
+                        <button id="createGame">Create Game</button>
+                    </div>
+                </div>
+
+                <div class="lobby-section">
+                    <h2>🎮 Join Game</h2>
+                    <div class="input-group">
+                        <input type="text" id="joinPlayerName" placeholder="Enter your name" maxlength="20">
+                    </div>
+                    <div class="input-group">
+                        <input type="text" id="gameCode" placeholder="Game Code" maxlength="6">
+                        <button id="joinGame">Join Game</button>
+                    </div>
+                    <div class="available-games">
+                        <h3>Available Games:</h3>
+                        <div id="gamesList"></div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -27,6 +45,17 @@
         </div>
 
         <div id="gameScreen" class="screen">
+            <div class="player-info-bar">
+                <div class="player-badge" id="player1Badge">
+                    <div class="player-avatar">👤</div>
+                    <span id="player1Name">Player 1</span>
+                </div>
+                <div class="player-badge" id="player2Badge">
+                    <div class="player-avatar">👤</div>
+                    <span id="player2Name">Player 2</span>
+                </div>
+            </div>
+
             <div class="game-header">
                 <div class="target-display">
                     Target: <span id="targetNumber">0</span>
@@ -62,6 +91,26 @@
         <div id="gameOverScreen" class="screen">
             <h2 id="gameResult"></h2>
             <button id="playAgain">Play Again</button>
+        </div>
+    </div>
+
+    <!-- Chat Box -->
+    <div class="chat-container minimized" id="chatContainer">
+        <div class="chat-header" id="chatHeader">
+            <h3>💬 Chat</h3>
+            <button class="chat-toggle" id="chatToggle">▼</button>
+        </div>
+        <div class="chat-messages" id="chatMessages"></div>
+        <div class="chat-quick-messages" id="quickMessages">
+            <button class="quick-msg-btn" data-msg="Hello! 👋">👋</button>
+            <button class="quick-msg-btn" data-msg="Good luck! 🍀">🍀</button>
+            <button class="quick-msg-btn" data-msg="Nice move! 👍">👍</button>
+            <button class="quick-msg-btn" data-msg="Oops! 😅">😅</button>
+            <button class="quick-msg-btn" data-msg="Well played! 🎯">🎯</button>
+            <button class="quick-msg-btn" data-msg="GG! 🎮">🎮</button>
+            <button class="quick-msg-btn" data-msg="Thanks! 😊">😊</button>
+            <button class="quick-msg-btn" data-msg="One more! 🔄">🔄</button>
+            <button class="quick-msg-btn" data-msg="Amazing! ⭐">⭐</button>
         </div>
     </div>
 

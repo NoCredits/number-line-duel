@@ -61,6 +61,27 @@ export class UIManager {
         this.updateOpponentInfo(gameState, playerId);
     }
 
+    updatePlayerNames(gameState: GameState, playerId: string): void {
+        if (gameState.players.length >= 2) {
+            const player1 = gameState.players[0];
+            const player2 = gameState.players[1];
+            
+            const isPlayer1Current = player1.id === playerId;
+            
+            // Update player 1 badge
+            const player1Badge = document.getElementById('player1Badge')!;
+            const player1Name = document.getElementById('player1Name')!;
+            player1Name.textContent = isPlayer1Current ? player1.name + ' (You)' : player1.name;
+            player1Badge.classList.toggle('active', player1.isCurrentPlayer);
+            
+            // Update player 2 badge
+            const player2Badge = document.getElementById('player2Badge')!;
+            const player2Name = document.getElementById('player2Name')!;
+            player2Name.textContent = !isPlayer1Current ? player2.name + ' (You)' : player2.name;
+            player2Badge.classList.toggle('active', player2.isCurrentPlayer);
+        }
+    }
+
     private updateNumberLine(tokenPosition: number, targetNumber: number): void {
         const lineElement = document.querySelector('.line') as HTMLElement;
         const tokenElement = document.getElementById('gameToken') as HTMLElement;

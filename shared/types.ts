@@ -24,6 +24,19 @@ export interface GameState {
   maxPosition?: number; // Maximum position on the number line (default 50)
 }
 
+export interface ChatMessage {
+  playerId: string;
+  playerName: string;
+  message: string;
+  timestamp: number;
+}
+
+export interface GameListing {
+  gameId: string;
+  playerName: string;
+  createdAt: number;
+}
+
 export type GameAction = 
   | { type: 'draft'; cardId: string }
   | { type: 'play'; cardId: string };
