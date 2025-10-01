@@ -5,18 +5,33 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Number Line Duel</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap">
 </head>
 <body>
     <div id="app">
         <div id="lobby" class="screen active">
             <h1>Number Line Duel</h1>
-            <div class="input-group">
-                <input type="text" id="playerName" placeholder="Enter your name" maxlength="20">
-                <button id="createGame">Create Game</button>
-            </div>
-            <div class="input-group">
-                <input type="text" id="gameCode" placeholder="Game Code" maxlength="6">
-                <button id="joinGame">Join Game</button>
+            
+            <div class="lobby-sections">
+                <div class="lobby-section">
+                    <h2>🎯 Create New Game</h2>
+                    <div class="input-group">
+                        <input type="text" id="playerName" placeholder="Enter your name" maxlength="20">
+                    </div>
+                    <div class="input-group">
+                        <button id="createGame">Create Game</button>
+                    </div>
+                </div>
+
+                <div class="lobby-section">
+                    <h2>🎮 Join Game</h2>
+                    <div class="input-group">
+                        <input type="text" id="gameCode" placeholder="Game Code" maxlength="6">
+                    </div>
+                    <div class="input-group">
+                        <button id="joinGame">Join Game</button>
+                    </div>
+                </div>
             </div>
         </div>
 
