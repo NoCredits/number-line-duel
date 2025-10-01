@@ -5,20 +5,93 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Number Line Duel</title>
     
-  <script type="module" crossorigin src="/assets/main-4b7af9a8.js"></script>
-  <link rel="stylesheet" href="/assets/index-35a65edc.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap">
+  <link rel="stylesheet" href="/assets/index-f541615c.css">
 </head>
 <body>
+    <!-- Navigation Menu -->
+    <nav class="main-nav" id="mainNav">
+        <div class="nav-header">
+            <h2 class="nav-logo">🎮 NLD</h2>
+            <button class="nav-toggle" id="navToggle">☰</button>
+        </div>
+        <div class="nav-content" id="navContent">
+            <div class="nav-section">
+                <h3>⚙️ Settings</h3>
+                <div class="nav-item" id="soundToggle">
+                    <span>🔊 Sound Effects</span>
+                    <label class="switch">
+                        <input type="checkbox" id="soundEffects" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="nav-item" id="animationToggle">
+                    <span>✨ Animations</span>
+                    <label class="switch">
+                        <input type="checkbox" id="animations" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+            <div class="nav-section">
+                <h3>👤 Player Info</h3>
+                <div class="player-stats">
+                    <div class="stat-item">
+                        <span class="stat-label">Name:</span>
+                        <span class="stat-value" id="playerNameDisplay">Guest</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Games Played:</span>
+                        <span class="stat-value" id="gamesPlayed">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Win Rate:</span>
+                        <span class="stat-value" id="winRate">0%</span>
+                    </div>
+                </div>
+            </div>
+            <div class="nav-section">
+                <h3>📜 Recent Games</h3>
+                <div id="gameHistory" class="game-history">
+                    <div class="no-history">No games played yet</div>
+                </div>
+            </div>
+            <div class="nav-section">
+                <button class="nav-button" id="aboutBtn">ℹ️ About</button>
+                <button class="nav-button" id="rulesBtn">📖 How to Play</button>
+            </div>
+        </div>
+    </nav>
+
     <div id="app">
         <div id="lobby" class="screen active">
+            <button class="menu-btn-lobby" id="menuBtnLobby" title="Menu">☰</button>
             <h1>Number Line Duel</h1>
-            <div class="input-group">
-                <input type="text" id="playerName" placeholder="Enter your name" maxlength="20">
-                <button id="createGame">Create Game</button>
-            </div>
-            <div class="input-group">
-                <input type="text" id="gameCode" placeholder="Game Code" maxlength="6">
-                <button id="joinGame">Join Game</button>
+            <div class="lobby-container">
+                <div class="lobby-section">
+                    <h2>🎯 Create New Game</h2>
+                    <div class="input-group">
+                        <input type="text" id="playerName" placeholder="Enter your name" maxlength="20">
+                    </div>
+                    <div class="input-group">
+                        <button id="createGame">Create Game</button>
+                    </div>
+                </div>
+
+                <div class="lobby-section">
+                    <h2>🎮 Join Game</h2>
+                    <div class="input-group">
+                        <input type="text" id="joinPlayerName" placeholder="Enter your name" maxlength="20">
+                    </div>
+                    <div class="input-group">
+                        <input type="text" id="gameCode" placeholder="Game Code" maxlength="6">
+                        <button id="joinGame">Join Game</button>
+                    </div>
+                    <div class="available-games">
+                        <h3>Available Games:</h3>
+                        <div id="gamesList"></div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -29,6 +102,23 @@
         </div>
 
         <div id="gameScreen" class="screen">
+            <div class="game-controls">
+                <button class="icon-btn" id="menuBtn" title="Menu">☰</button>
+                <button class="icon-btn" id="chatBtn" title="Chat">💬</button>
+                <button class="icon-btn" id="helpBtn" title="Help">❓</button>
+            </div>
+
+            <div class="player-info-bar">
+                <div class="player-badge" id="player1Badge">
+                    <div class="player-avatar">👤</div>
+                    <span id="player1Name">Player 1</span>
+                </div>
+                <div class="player-badge" id="player2Badge">
+                    <div class="player-avatar">👤</div>
+                    <span id="player2Name">Player 2</span>
+                </div>
+            </div>
+
             <div class="game-header">
                 <div class="target-display">
                     Target: <span id="targetNumber">0</span>
@@ -59,6 +149,28 @@
                 <h3>Opponent</h3>
                 <div id="opponentHand" class="cards-container"></div>
             </div>
+
+            <!-- Chat Box - Only visible in game -->
+            <div class="chat-container minimized" id="chatContainer">
+                <div class="chat-header" id="chatHeader">
+                    <h3>💬 Chat</h3>
+                    <button class="chat-toggle" id="chatToggle">▼</button>
+                </div>
+                <div class="chat-body">
+                    <div class="chat-messages" id="chatMessages"></div>
+                    <div class="chat-quick-messages" id="quickMessages">
+                        <button class="quick-msg-btn" data-msg="Hello! 👋">👋</button>
+                        <button class="quick-msg-btn" data-msg="Good luck! 🍀">🍀</button>
+                        <button class="quick-msg-btn" data-msg="Nice move! 👍">👍</button>
+                        <button class="quick-msg-btn" data-msg="Oops! 😅">😅</button>
+                        <button class="quick-msg-btn" data-msg="Well played! 🎯">🎯</button>
+                        <button class="quick-msg-btn" data-msg="GG! 🎮">🎮</button>
+                        <button class="quick-msg-btn" data-msg="Thanks! 😊">😊</button>
+                        <button class="quick-msg-btn" data-msg="One more! 🔄">🔄</button>
+                        <button class="quick-msg-btn" data-msg="Amazing! ⭐">⭐</button>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <div id="gameOverScreen" class="screen">
@@ -67,7 +179,37 @@
         </div>
     </div>
 
-    <script src="/socket.io/socket.io.js"></script>
-    
+    <!-- Modal for About/Rules -->
+    <div class="modal" id="infoModal">
+        <div class="modal-content">
+            <span class="modal-close" id="modalClose">&times;</span>
+            <div id="modalBody"></div>
+        </div>
+    </div>
+
+    <script>
+        // Dynamic Socket.io script loading based on current host
+        const currentHost = window.location.hostname;
+        const socketPort = 3001;
+        const socketUrl = `http://${currentHost}:${socketPort}`;
+        
+        // Load Socket.io script dynamically
+        const script = document.createElement('script');
+        script.src = `${socketUrl}/socket.io/socket.io.js`;
+        script.onload = () => {
+            // Store the socket URL globally for the client to use
+            window.SOCKET_URL = socketUrl;
+            
+            // Load the main client script
+      /assets/client-8c68a5bd.ts/src/client.ts').catch(error => {
+                console.error('Failed to load client:', error);
+                document.body.innerHTML += '<p style="color: red;">Failed to load game client. Check console.</p>';
+            });
+        };
+        script.onerror = () => {
+            document.body.innerHTML += '<p style="color: red;">Failed to connect to game server. Make sure server is running.</p>';
+        };
+        document.head.appendChild(script);
+    </script>
 </body>
 </html>
