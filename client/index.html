@@ -56,6 +56,7 @@
                 </div>
             </div>
             <div class="nav-section">
+                <button class="nav-button" id="leaveGameBtn" style="display: none;">🚪 Leave Game</button>
                 <button class="nav-button" id="aboutBtn">ℹ️ About</button>
                 <button class="nav-button" id="rulesBtn">📖 How to Play</button>
             </div>
@@ -63,29 +64,64 @@
     </nav>
 
     <div id="app">
-        <div id="lobby" class="screen active">
-            <button class="menu-btn-lobby" id="menuBtnLobby" title="Menu">☰</button>
-            <h1>Number Line Duel</h1>
+        <!-- 👤 LOGIN SCREEN -->
+        <div id="loginScreen" class="screen active">
+            <div class="login-container">
+                <h1>🎮 Game Arena</h1>
+                <p class="subtitle">Welcome! Enter your name to continue</p>
+                <div class="login-form">
+                    <input type="text" id="loginPlayerName" placeholder="Enter your name" maxlength="20" autofocus>
+                    <button id="loginBtn" class="primary-btn">Continue</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 🏠 MAIN MENU -->
+        <div id="mainMenu" class="screen">
+            <button class="menu-btn-lobby" id="menuBtnMain" title="Menu">☰</button>
+            <h1>Welcome, <span id="playerNameHeader">Player</span>!</h1>
+            
+            <div class="main-menu-container">
+                <h2>Choose Game Mode</h2>
+                <div class="game-mode-cards">
+                    <div class="game-mode-card" id="selectNumberLine">
+                        <div class="mode-icon">🔢</div>
+                        <h3>Number Line Duel</h3>
+                        <p>Mathematical card battle on a number line</p>
+                        <button class="mode-select-btn">Select</button>
+                    </div>
+                    <div class="game-mode-card" id="selectGoose">
+                        <div class="mode-icon">🦢</div>
+                        <h3>Modern Goose Duel</h3>
+                        <p>Strategic card racing with traps and power-ups</p>
+                        <button class="mode-select-btn">Select</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 🎯 GAME LOBBY (for selected mode) -->
+        <div id="lobby" class="screen">
+            <button class="menu-btn-lobby" id="menuBtnLobby" title="Back to Menu">←</button>
+            <h1 id="lobbyTitle">Number Line Duel</h1>
+            
             <div class="lobby-container">
                 <div class="lobby-section">
                     <h2>🎯 Create New Game</h2>
                     <div class="input-group">
-                        <input type="text" id="playerName" placeholder="Enter your name" maxlength="20">
-                    </div>
-                    <div class="input-group">
-                        <button id="createGame">Create Game</button>
+                        <button id="createGame" class="primary-btn">Create Game</button>
                     </div>
                 </div>
 
                 <div class="lobby-section">
                     <h2>🎮 Join Game</h2>
                     <div class="input-group">
-                        <input type="text" id="joinPlayerName" placeholder="Enter your name" maxlength="20">
-                    </div>
-                    <div class="input-group">
-                        <input type="text" id="gameCode" placeholder="Game Code" maxlength="6">
+                        <input type="text" id="gameCode" placeholder="Enter Game Code" maxlength="6">
                         <button id="joinGame">Join Game</button>
                     </div>
+                    <p style="font-size: 0.9em; color: #999; margin-top: 10px;">
+                        💡 <strong>Testing multiplayer?</strong> Open an incognito/private window (Ctrl+Shift+N) for the second player
+                    </p>
                     <div class="available-games">
                         <h3>Available Games:</h3>
                         <div id="gamesList"></div>
@@ -175,6 +211,43 @@
         <div id="gameOverScreen" class="screen">
             <h2 id="gameResult"></h2>
             <button id="playAgain">Play Again</button>
+        </div>
+
+        <!-- 🦢 Goose Duel Game Screen -->
+        <div id="gooseGameScreen" class="screen">
+            <div class="goose-game-container">
+                <div class="goose-header">
+                    <button class="menu-btn-game" id="menuBtnGoose" title="Menu">☰</button>
+                    <h1>🦢 Modern Goose Duel</h1>
+                    <div id="gooseTurnIndicator" class="turn-indicator">Waiting...</div>
+                </div>
+
+                <div id="goosePlayerInfo" class="goose-players">
+                    <!-- Player cards will be inserted here -->
+                </div>
+
+                <div class="goose-board-container">
+                    <div id="gooseBoardTrack" class="goose-board">
+                        <!-- Board will be generated here -->
+                    </div>
+                </div>
+
+                <div class="goose-action-log">
+                    <h3>Action Log</h3>
+                    <div id="gooseActionLog"></div>
+                </div>
+
+                <div class="goose-hand-container">
+                    <h3>Your Hand</h3>
+                    <div id="goosePlayerHand" class="goose-hand">
+                        <!-- Player cards will be inserted here -->
+                    </div>
+                </div>
+
+                <div id="gooseActions" class="goose-actions">
+                    <button class="action-btn" id="gooseEndTurnBtn">End Turn</button>
+                </div>
+            </div>
         </div>
     </div>
 

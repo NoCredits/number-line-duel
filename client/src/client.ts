@@ -1,21 +1,26 @@
 import { GameState, Card, ChatMessage, GameListing } from '../../shared/types';
 import { UIManager } from './ui';
 import { GameClient } from './game';
+import { GooseGameClient } from './goose-game';
 
 // Use global io from socket.io script
 declare const io: any;
 declare const window: any;
 
+type GameMode = 'numberline' | 'goose';
+
 class NumberLineDuelClient {
     private socket: any;
     private ui: UIManager;
     private game: GameClient;
+    private gooseGame: GooseGameClient | null = null;
     private currentGameId: string = '';
     private playerName: string = '';
     private isChatMinimized: boolean = true;
     private gamesPlayed: number = 0;
     private gamesWon: number = 0;
     private gameHistory: Array<{result: string, opponent: string, date: string}> = [];
+    private selectedGameMode: GameMode = 'numberline';
 
     constructor() {
         // Use dynamic socket URL from global variable, fallback to localhost
@@ -29,7 +34,15 @@ class NumberLineDuelClient {
         this.setupSocketListeners();
         this.setupChatListeners();
         this.setupNavigationListeners();
-        this.requestGamesList();
+        
+        // Check if player is already logged in
+        if (this.playerName) {
+            console.log('Player already logged in:', this.playerName);
+            this.showScreen('mainMenu');
+        } else {
+            // Show login screen first
+            this.showScreen('loginScreen');
+        }
         
         // Ensure menu is hidden on load
         const mainNav = document.getElementById('mainNav');
@@ -45,6 +58,19 @@ class NumberLineDuelClient {
         this.gamesWon = parseInt(localStorage.getItem('gamesWon') || '0');
         this.gameHistory = JSON.parse(localStorage.getItem('gameHistory') || '[]');
         
+        // Load saved player name
+        const savedName = localStorage.getItem('playerName');
+        if (savedName) {
+            this.playerName = savedName;
+            document.getElementById('playerNameDisplay')!.textContent = savedName;
+            document.getElementById('playerNameHeader')!.textContent = savedName;
+            // Auto-populate login input
+            const loginInput = document.getElementById('loginPlayerName') as HTMLInputElement;
+            if (loginInput) {
+                loginInput.value = savedName;
+            }
+        }
+        
         this.updatePlayerStats();
         this.updateGameHistory();
     }
@@ -53,6 +79,7 @@ class NumberLineDuelClient {
         localStorage.setItem('gamesPlayed', this.gamesPlayed.toString());
         localStorage.setItem('gamesWon', this.gamesWon.toString());
         localStorage.setItem('gameHistory', JSON.stringify(this.gameHistory));
+        localStorage.setItem('playerName', this.playerName);
     }
 
     private updatePlayerStats(): void {
@@ -83,7 +110,9 @@ class NumberLineDuelClient {
 
     private setupNavigationListeners(): void {
         const menuBtn = document.getElementById('menuBtn');
+        const menuBtnMain = document.getElementById('menuBtnMain');
         const menuBtnLobby = document.getElementById('menuBtnLobby');
+        const menuBtnGoose = document.getElementById('menuBtnGoose');
         const navToggle = document.getElementById('navToggle');
         const mainNav = document.getElementById('mainNav')!;
         
@@ -102,8 +131,22 @@ class NumberLineDuelClient {
             menuBtn.addEventListener('click', toggleNav);
         }
 
+        if (menuBtnMain) {
+            menuBtnMain.addEventListener('click', toggleNav);
+        }
+
         if (menuBtnLobby) {
-            menuBtnLobby.addEventListener('click', toggleNav);
+            menuBtnLobby.addEventListener('click', () => {
+                // Close nav if open
+                mainNav.classList.remove('open');
+                overlay.classList.remove('active');
+                // Go back to main menu
+                this.showScreen('mainMenu');
+            });
+        }
+
+        if (menuBtnGoose) {
+            menuBtnGoose.addEventListener('click', toggleNav);
         }
         
         if (navToggle) {
@@ -111,6 +154,22 @@ class NumberLineDuelClient {
         }
 
         overlay.addEventListener('click', toggleNav);
+
+        // Leave Game button
+        const leaveGameBtn = document.getElementById('leaveGameBtn');
+        if (leaveGameBtn) {
+            leaveGameBtn.addEventListener('click', () => {
+                if (confirm('Are you sure you want to leave the game?')) {
+                    // Close nav
+                    mainNav.classList.remove('open');
+                    overlay.classList.remove('active');
+                    // Return to main menu
+                    this.showScreen('mainMenu');
+                    // Hide leave game button
+                    leaveGameBtn.style.display = 'none';
+                }
+            });
+        }
 
         // Chat button in game
         const chatBtn = document.getElementById('chatBtn');
@@ -215,21 +274,64 @@ class NumberLineDuelClient {
     }
 
     private initializeEventListeners(): void {
+        console.log('Initializing event listeners...');
+        
+        // Login screen
+        const loginBtn = document.getElementById('loginBtn');
+        const loginInput = document.getElementById('loginPlayerName') as HTMLInputElement;
+        
+        if (loginBtn) {
+            loginBtn.addEventListener('click', () => this.handleLogin());
+            console.log('Login button listener added');
+        } else {
+            console.error('Login button not found!');
+        }
+        
+        if (loginInput) {
+            loginInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') this.handleLogin();
+            });
+            console.log('Login input listener added');
+        } else {
+            console.error('Login input not found!');
+        }
+        
+        // Main menu - Game mode selection
+        const selectNumberLine = document.getElementById('selectNumberLine');
+        const selectGoose = document.getElementById('selectGoose');
+        
+        if (selectNumberLine) {
+            selectNumberLine.addEventListener('click', () => this.selectGameModeFromMenu('numberline'));
+        }
+        
+        if (selectGoose) {
+            selectGoose.addEventListener('click', () => this.selectGameModeFromMenu('goose'));
+        }
+        
         // Lobby events
-        document.getElementById('createGame')!.addEventListener('click', () => this.createGame());
-        document.getElementById('joinGame')!.addEventListener('click', () => this.joinGame());
-        document.getElementById('playAgain')!.addEventListener('click', () => this.playAgain());
-
-        // Enter key support
-        document.getElementById('playerName')!.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') this.createGame();
-        });
-        document.getElementById('joinPlayerName')!.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') this.joinGame();
-        });
-        document.getElementById('gameCode')!.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') this.joinGame();
-        });
+        const createGameBtn = document.getElementById('createGame');
+        const joinGameBtn = document.getElementById('joinGame');
+        const playAgainBtn = document.getElementById('playAgain');
+        const gameCodeInput = document.getElementById('gameCode');
+        
+        if (createGameBtn) {
+            createGameBtn.addEventListener('click', () => this.createGame());
+        }
+        
+        if (joinGameBtn) {
+            joinGameBtn.addEventListener('click', () => this.joinGame());
+        }
+        
+        if (playAgainBtn) {
+            playAgainBtn.addEventListener('click', () => this.playAgain());
+        }
+        
+        // Enter key support for game code
+        if (gameCodeInput) {
+            gameCodeInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') this.joinGame();
+            });
+        }
     }
 
     private setupChatListeners(): void {
@@ -268,12 +370,20 @@ class NumberLineDuelClient {
         // Request games list every 3 seconds when in lobby
         setInterval(() => {
             if (document.getElementById('lobby')?.classList.contains('active')) {
-                this.socket.emit('requestGamesList');
+                if (this.selectedGameMode === 'goose') {
+                    this.socket.emit('requestGooseGamesList');
+                } else {
+                    this.socket.emit('requestGamesList');
+                }
             }
         }, 3000);
         
         // Request immediately on load
-        this.socket.emit('requestGamesList');
+        if (this.selectedGameMode === 'goose') {
+            this.socket.emit('requestGooseGamesList');
+        } else {
+            this.socket.emit('requestGamesList');
+        }
     }
 
     private setupSocketListeners(): void {
@@ -321,6 +431,99 @@ class NumberLineDuelClient {
         this.socket.on('error', (message: string) => {
             alert('Error: ' + message);
         });
+
+        // Goose Game Socket Listeners
+        this.socket.on('gooseGameCreated', (data: { gameId: string; gameState: any }) => {
+            console.log('🎮 Game created:', data.gameId);
+            this.currentGameId = data.gameId;
+            // Import and initialize GooseUIManager dynamically
+            import('./goose-ui.js').then(({ GooseUIManager }) => {
+                const gooseUI = new GooseUIManager();
+                this.gooseGame = new GooseGameClient(this.socket, gooseUI, data.gameId);
+                this.gooseGame.setPlayerId(this.socket.id);
+                console.log('GooseGameClient initialized for creator');
+            });
+            this.ui.showWaitingRoom(data.gameId);
+        });
+
+        this.socket.on('gooseGameJoined', (data: { gameId: string; gameState: any }) => {
+            console.log('🎮✅ Successfully joined game:', data.gameId);
+            console.log('📊 Game state on join:', data.gameState);
+            this.currentGameId = data.gameId;
+            // Import and initialize GooseUIManager dynamically
+            import('./goose-ui.js').then(({ GooseUIManager }) => {
+                console.log('📦 GooseUIManager module loaded');
+                const gooseUI = new GooseUIManager();
+                console.log('🎨 GooseUIManager instance created');
+                this.gooseGame = new GooseGameClient(this.socket, gooseUI, data.gameId);
+                console.log('🎮 GooseGameClient instance created');
+                this.gooseGame.setPlayerId(this.socket.id);
+                console.log('✅ GooseGameClient initialized for joining player, playerID:', this.socket.id);
+                
+                // Check if game is already playing when we join
+                if (data.gameState.gameStatus === 'playing') {
+                    console.log('🎮 Game already started! Showing game screen immediately...');
+                    // Game is already playing, show the board immediately
+                    gooseUI.showGameScreen();
+                    gooseUI.updateGameState(data.gameState, this.socket.id);
+                    gooseUI.showNotification('Joined game! 🦢', 'success');
+                } else {
+                    console.log('⏳ Game not started yet, showing waiting room');
+                    // Show waiting room if waiting for more players
+                    this.ui.showWaitingRoom(data.gameId);
+                }
+            }).catch(error => {
+                console.error('❌ Failed to load GooseUIManager:', error);
+            });
+        });
+
+        this.socket.on('gooseGameState', (gameState: any) => {
+            console.log('📊 Game state update received:', gameState.gameStatus);
+            // Game state updates are handled by GooseGameClient socket listeners
+            // The GooseGameClient is already initialized by gooseGameCreated or gooseGameJoined
+        });
+
+        this.socket.on('gooseGameStarted', (gameState: any) => {
+            console.log('🎮 Goose game started!', gameState);
+            console.log('Current gameId:', this.currentGameId);
+            console.log('Socket ID:', this.socket.id);
+            console.log('GooseGame client exists:', !!this.gooseGame);
+            
+            // The GooseGameClient should already be initialized and listening
+            // It will handle showing the game screen via its own listener
+        });
+
+        this.socket.on('gooseActionResult', (result: any) => {
+            // Handled by GooseGameClient
+            console.log('Goose action:', result.message);
+        });
+
+        this.socket.on('gooseGameOver', (data: { winner: string | null; reason: string }) => {
+            const isWinner = data.winner === this.socket.id;
+            
+            // Update stats
+            this.gamesPlayed++;
+            if (isWinner) {
+                this.gamesWon++;
+            }
+
+            // Add to history
+            const opponent = 'Opponent';
+            this.gameHistory.push({
+                result: isWinner ? 'win' : 'loss',
+                opponent: opponent,
+                date: new Date().toLocaleDateString()
+            });
+
+            this.savePlayerData();
+            this.updatePlayerStats();
+            this.updateGameHistory();
+        });
+
+        this.socket.on('gooseGamesList', (games: GameListing[]) => {
+            // Could display Goose games differently if needed
+            this.displayGamesList(games);
+        });
     }
 
     private displayGamesList(games: GameListing[]): void {
@@ -366,52 +569,160 @@ class NumberLineDuelClient {
         }
     }
 
-    private createGame(): void {
-        const playerName = (document.getElementById('playerName') as HTMLInputElement).value.trim();
+    private selectGameMode(mode: GameMode): void {
+        this.selectedGameMode = mode;
+        console.log('Game mode selected:', mode);
+        
+        // Update button styles
+        const numberLineBtn = document.getElementById('modeNumberLine')!;
+        const gooseBtn = document.getElementById('modeGoose')!;
+        
+        if (mode === 'numberline') {
+            numberLineBtn.classList.add('active');
+            gooseBtn.classList.remove('active');
+        } else {
+            gooseBtn.classList.add('active');
+            numberLineBtn.classList.remove('active');
+        }
+    }
+
+    private showScreen(screenId: string): void {
+        document.querySelectorAll('.screen').forEach(screen => {
+            (screen as HTMLElement).classList.remove('active');
+        });
+        const screen = document.getElementById(screenId);
+        if (screen) {
+            screen.classList.add('active');
+        }
+
+        // Show/hide Leave Game button based on screen
+        const leaveGameBtn = document.getElementById('leaveGameBtn');
+        if (leaveGameBtn) {
+            if (screenId === 'gameScreen' || screenId === 'gooseGameScreen') {
+                leaveGameBtn.style.display = 'block';
+            } else {
+                leaveGameBtn.style.display = 'none';
+            }
+        }
+    }
+
+    private handleLogin(): void {
+        console.log('handleLogin called');
+        const loginInput = document.getElementById('loginPlayerName') as HTMLInputElement;
+        const playerName = loginInput.value.trim();
+        
+        console.log('Player name:', playerName);
+        
         if (!playerName) {
             alert('Please enter your name');
             return;
         }
+        
         this.playerName = playerName;
         document.getElementById('playerNameDisplay')!.textContent = playerName;
-        this.socket.emit('createGame', playerName);
+        document.getElementById('playerNameHeader')!.textContent = playerName;
+        
+        // Save player name to localStorage
+        localStorage.setItem('playerName', playerName);
+        
+        console.log('Showing main menu...');
+        // Show main menu
+        this.showScreen('mainMenu');
+    }
+
+    private selectGameModeFromMenu(mode: GameMode): void {
+        this.selectedGameMode = mode;
+        console.log('Game mode selected from menu:', mode);
+        
+        // Update lobby title based on mode
+        const lobbyTitle = document.getElementById('lobbyTitle');
+        if (lobbyTitle) {
+            lobbyTitle.textContent = mode === 'goose' ? '🦢 Modern Goose Duel' : '🔢 Number Line Duel';
+        }
+        
+        // Request games list for the selected mode
+        this.requestGamesList();
+        
+        // Show lobby
+        this.showScreen('lobby');
+    }
+
+    private createGame(): void {
+        console.log('Creating game with mode:', this.selectedGameMode);
+        
+        if (!this.playerName) {
+            alert('Please log in first');
+            this.showScreen('loginScreen');
+            return;
+        }
+        
+        if (this.selectedGameMode === 'goose') {
+            console.log('Emitting createGooseGame');
+            this.socket.emit('createGooseGame', this.playerName);
+        } else {
+            console.log('Emitting createGame (Number Line)');
+            this.socket.emit('createGame', this.playerName);
+        }
     }
 
     private joinGame(): void {
-        const playerName = (document.getElementById('joinPlayerName') as HTMLInputElement).value.trim();
+        console.log('🔍 joinGame() called');
         const gameCode = (document.getElementById('gameCode') as HTMLInputElement).value.trim().toUpperCase();
+        console.log('🔍 Game code from input:', gameCode);
+        console.log('🔍 Player name:', this.playerName);
+        console.log('🔍 Selected game mode:', this.selectedGameMode);
         
-        if (!playerName || !gameCode) {
-            alert('Please enter both your name and game code');
+        if (!this.playerName) {
+            alert('Please log in first');
+            this.showScreen('loginScreen');
             return;
         }
         
-        this.playerName = playerName;
-        document.getElementById('playerNameDisplay')!.textContent = playerName;
-        this.socket.emit('joinGame', gameCode, playerName);
-        this.currentGameId = gameCode;
-        this.game.setGameId(gameCode);
+        if (!gameCode) {
+            alert('Please enter a game code');
+            return;
+        }
+        
+        if (this.selectedGameMode === 'goose') {
+            this.currentGameId = gameCode;
+            console.log('🎮 Joining goose game:', gameCode, 'as player:', this.playerName);
+            this.socket.emit('joinGooseGame', gameCode, this.playerName);
+        } else {
+            console.log('🔢 Joining number line game:', gameCode);
+            this.socket.emit('joinGame', gameCode, this.playerName);
+            this.currentGameId = gameCode;
+            this.game.setGameId(gameCode);
+        }
     }
 
     private joinGameById(gameId: string): void {
-        const playerName = (document.getElementById('joinPlayerName') as HTMLInputElement).value.trim();
+        console.log('🎮 joinGameById called with:', gameId);
+        console.log('🎮 Current player name:', this.playerName);
+        console.log('🎮 Selected game mode:', this.selectedGameMode);
         
-        if (!playerName) {
-            alert('Please enter your name first');
+        if (!this.playerName) {
+            alert('Please log in first');
+            this.showScreen('loginScreen');
             return;
         }
         
-        this.playerName = playerName;
-        document.getElementById('playerNameDisplay')!.textContent = playerName;
-        this.socket.emit('joinGame', gameId, playerName);
+        // Set the current game ID
         this.currentGameId = gameId;
-        this.game.setGameId(gameId);
+        
+        // Join based on game mode
+        if (this.selectedGameMode === 'goose') {
+            console.log('🎮 Joining Goose game from list:', gameId);
+            this.socket.emit('joinGooseGame', gameId, this.playerName);
+        } else {
+            console.log('🔢 Joining Number Line game from list:', gameId);
+            this.socket.emit('joinGame', gameId, this.playerName);
+            this.game.setGameId(gameId);
+        }
     }
 
     private playAgain(): void {
-        this.ui.showLobby();
-        (document.getElementById('playerName') as HTMLInputElement).value = '';
-        (document.getElementById('joinPlayerName') as HTMLInputElement).value = '';
+        // Go back to main menu to select game mode again
+        this.showScreen('mainMenu');
         (document.getElementById('gameCode') as HTMLInputElement).value = '';
         this.currentGameId = '';
         
