@@ -96,6 +96,12 @@
                         <p>Strategic card racing with traps and power-ups</p>
                         <button class="mode-select-btn">Select</button>
                     </div>
+                    <div class="game-mode-card" id="selectArtillery">
+                        <div class="mode-icon">💣</div>
+                        <h3>Artillery Duel</h3>
+                        <p>Real-time artillery combat with physics</p>
+                        <button class="mode-select-btn">Select</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -246,6 +252,59 @@
 
                 <div id="gooseActions" class="goose-actions">
                     <button class="action-btn" id="gooseEndTurnBtn">End Turn</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 💣 Artillery Duel Game Screen -->
+        <div id="artilleryGameScreen" class="screen">
+            <div class="artillery-game-container">
+                <div class="artillery-header">
+                    <button class="menu-btn-game" id="menuBtnArtillery" title="Menu">☰</button>
+                    <h1>💣 Artillery Duel</h1>
+                    <div id="artilleryTurnIndicator" class="turn-indicator">Waiting for opponent...</div>
+                </div>
+
+                <div class="artillery-players">
+                    <div id="artilleryPlayer1" class="artillery-player-card">
+                        <h3>👤 Player 1</h3>
+                        <div class="health-bar">
+                            <div class="health-fill" style="width: 100%;"></div>
+                        </div>
+                        <div class="artillery-health-value">100/100</div>
+                    </div>
+                    <div id="artilleryPlayer2" class="artillery-player-card">
+                        <h3>👤 Player 2</h3>
+                        <div class="health-bar">
+                            <div class="health-fill" style="width: 100%;"></div>
+                        </div>
+                        <div class="artillery-health-value">100/100</div>
+                    </div>
+                </div>
+
+                <div class="artillery-canvas-container">
+                    <canvas id="artilleryCanvas" width="1000" height="600"></canvas>
+                </div>
+
+                <div class="artillery-controls">
+                    <div class="control-group">
+                        <label for="artilleryAngle">Angle (0-90°)</label>
+                        <input type="number" id="artilleryAngle" min="0" max="90" value="45" placeholder="45">
+                    </div>
+                    <div class="control-group">
+                        <label for="artilleryPower">Power (1-100)</label>
+                        <input type="number" id="artilleryPower" min="1" max="100" value="50" placeholder="50">
+                    </div>
+                    <button class="action-btn" id="artilleryFireBtn">🔥 Fire!</button>
+                </div>
+
+                <div class="artillery-info">
+                    <div class="wind-info">
+                        <span>💨 Wind: <span id="windSpeed">0</span> m/s</span>
+                    </div>
+                    <div id="artilleryActionLog" class="artillery-log">
+                        <!-- Action log will be inserted here -->
+                    </div>
                 </div>
             </div>
         </div>
