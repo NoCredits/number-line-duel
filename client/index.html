@@ -273,7 +273,7 @@
             window.SOCKET_URL = socketUrl;
             
             // Load the main client script
-            import('./src/client.ts').catch(error => {
+            import('./src/core/App.ts').catch(error => {
                 console.error('Failed to load client:', error);
                 document.body.innerHTML += '<p style="color: red;">Failed to load game client. Check console.</p>';
             });
