@@ -3,7 +3,6 @@ import { createServer } from 'http';
 import { Server } from 'socket.io';
 import { Game } from './Game';
 import { GooseGame } from './GooseGame';
-import { ArtilleryGame } from './ArtilleryGame';
 import { GameListing, ChatMessage } from '../../shared/types';
 import path from 'path';
 
@@ -28,8 +27,6 @@ if (process.env.NODE_ENV === 'production') {
 
 const games = new Map<string, Game>();
 const gooseGames = new Map<string, GooseGame>();
-const artilleryGames = new Map<string, ArtilleryGame>();
-const artilleryQueue: string[] = []; // Queue of players waiting for artillery match
 const gameCreators = new Map<string, { playerName: string; createdAt: number }>();
 
 // Helper function to get available games list
@@ -320,160 +317,8 @@ io.on('connection', (socket) => {
     });
   });
 
-  // Artillery Game Handlers
-  socket.on('joinArtilleryQueue', () => {
-    console.log('🎯 Player joined artillery queue:', socket.id);
-    
-    // Check if player is already in queue
-    if (artilleryQueue.includes(socket.id)) {
-      return;
-    }
-
-    artilleryQueue.push(socket.id);
-    console.log('🎯 Queue length:', artilleryQueue.length);
-
-    // Try to match players
-    if (artilleryQueue.length >= 2) {
-      const player1 = artilleryQueue.shift()!;
-      const player2 = artilleryQueue.shift()!;
-      
-      const roomId = Math.random().toString(36).substr(2, 6).toUpperCase();
-      const game = new ArtilleryGame(roomId, player1, player2);
-      
-      artilleryGames.set(roomId, game);
-      
-      // Add both players to room
-      io.sockets.sockets.get(player1)?.join(roomId);
-      io.sockets.sockets.get(player2)?.join(roomId);
-      
-      // Notify both players
-      io.to(roomId).emit('artilleryMatchFound', {
-        roomId,
-        state: game.getGameState()
-      });
-      
-      console.log(`🎯 Artillery match created: ${roomId}`);
-      console.log(`🎯 Player 1: ${player1}`);
-      console.log(`🎯 Player 2: ${player2}`);
-      console.log(`🎯 Game state:`, game.getGameState());
-    }
-  });
-
-  socket.on('artilleryFire', (data: { roomId: string; angle: number; power: number }) => {
-    const { roomId, angle, power } = data;
-    console.log(`🎯 Artillery fire from ${socket.id}: angle=${angle}, power=${power}`);
-    
-    const game = artilleryGames.get(roomId);
-    if (!game) {
-      socket.emit('error', 'Game not found');
-      return;
-    }
-
-    // Check if it's player's turn
-    const currentPlayer = game.getCurrentPlayer();
-    if (currentPlayer.id !== socket.id) {
-      socket.emit('error', 'Not your turn');
-      return;
-    }
-
-    // Get player key (p1 or p2)
-    const playerKey = game.getPlayerKey(socket.id);
-    if (!playerKey) {
-      socket.emit('error', 'Player not found');
-      return;
-    }
-
-    // Get player position
-    const playerPos = game.getPlayerPosition(socket.id);
-    if (!playerPos) {
-      socket.emit('error', 'Player position not found');
-      return;
-    }
-
-    // Pause timer during shot
-    game.pauseTimer();
-
-    // Calculate trajectory with player1/player2 flag
-    const isPlayer1 = playerKey === 'p1';
-    const trajectory = game.calculateTrajectory(angle, power, playerPos.x, playerPos.y, isPlayer1);
-    
-    // Send trajectory to all players in room
-    io.to(roomId).emit('artilleryShotFired', {
-      trajectory,
-      shooter: playerKey,
-      shooterId: currentPlayer.id,
-      angle,
-      power
-    });
-
-    // Check for hit
-    const hitPlayerKey = game.checkHit(trajectory);
-    
-    if (hitPlayerKey) {
-      game.applyDamage(hitPlayerKey);
-      const victim = game.getGameState().players[hitPlayerKey];
-      
-      io.to(roomId).emit('artilleryHit', {
-        victim: hitPlayerKey,
-        health: victim.health,
-        damage: 20
-      });
-
-      // Check if game is over
-      if (game.isGameOver()) {
-        const winner = game.getWinner();
-        if (winner) {
-          io.to(roomId).emit('artilleryGameOver', {
-            winner: game.checkGameOver(),
-            winnerId: winner.id
-          });
-          
-          // Clean up game after a delay
-          setTimeout(() => {
-            artilleryGames.delete(roomId);
-          }, 5000);
-        }
-        return;
-      }
-    }
-
-    // Next turn
-    setTimeout(() => {
-      game.nextTurn();
-      io.to(roomId).emit('artilleryTurnChanged', {
-        turn: game.getTurn(),
-        currentPlayer: game.getCurrentPlayer().id,
-        wind: game.getWind()
-      });
-    }, 500);
-  });
-
   socket.on('disconnect', () => {
     console.log('Player disconnected:', socket.id);
-    
-    // Remove from artillery queue
-    const queueIndex = artilleryQueue.indexOf(socket.id);
-    if (queueIndex > -1) {
-      artilleryQueue.splice(queueIndex, 1);
-      console.log('🎯 Player removed from artillery queue');
-    }
-
-    // Clean up artillery games
-    artilleryGames.forEach((game, roomId) => {
-      const state = game.getGameState();
-      const hasPlayer = state.players.p1.id === socket.id || state.players.p2.id === socket.id;
-      if (hasPlayer) {
-        // End the game if a player disconnects
-        const winnerId = state.players.p1.id === socket.id ? state.players.p2.id : state.players.p1.id;
-        const winnerKey = state.players.p1.id === socket.id ? 'p2' : 'p1';
-        io.to(roomId).emit('artilleryGameOver', {
-          winner: winnerKey,
-          winnerId: winnerId
-        });
-        artilleryGames.delete(roomId);
-        console.log(`🎯 Artillery game ${roomId} ended due to disconnect`);
-      }
-    });
     
     // Clean up Number Line Duel games when players disconnect
     games.forEach((game, gameId) => {

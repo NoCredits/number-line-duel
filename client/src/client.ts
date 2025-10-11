@@ -7,14 +7,13 @@ import { GooseGameClient } from './goose-game';
 declare const io: any;
 declare const window: any;
 
-type GameMode = 'numberline' | 'goose' | 'artillery';
+type GameMode = 'numberline' | 'goose';
 
 class NumberLineDuelClient {
     private socket: any;
     private ui: UIManager;
     private game: GameClient;
     private gooseGame: GooseGameClient | null = null;
-    private artilleryGame: any | null = null;
     private currentGameId: string = '';
     private playerName: string = '';
     private isChatMinimized: boolean = true;
@@ -114,7 +113,6 @@ class NumberLineDuelClient {
         const menuBtnMain = document.getElementById('menuBtnMain');
         const menuBtnLobby = document.getElementById('menuBtnLobby');
         const menuBtnGoose = document.getElementById('menuBtnGoose');
-        const menuBtnArtillery = document.getElementById('menuBtnArtillery');
         const navToggle = document.getElementById('navToggle');
         const mainNav = document.getElementById('mainNav')!;
         
@@ -149,10 +147,6 @@ class NumberLineDuelClient {
 
         if (menuBtnGoose) {
             menuBtnGoose.addEventListener('click', toggleNav);
-        }
-
-        if (menuBtnArtillery) {
-            menuBtnArtillery.addEventListener('click', toggleNav);
         }
         
         if (navToggle) {
@@ -305,7 +299,6 @@ class NumberLineDuelClient {
         // Main menu - Game mode selection
         const selectNumberLine = document.getElementById('selectNumberLine');
         const selectGoose = document.getElementById('selectGoose');
-        const selectArtillery = document.getElementById('selectArtillery');
         
         if (selectNumberLine) {
             selectNumberLine.addEventListener('click', () => this.selectGameModeFromMenu('numberline'));
@@ -313,10 +306,6 @@ class NumberLineDuelClient {
         
         if (selectGoose) {
             selectGoose.addEventListener('click', () => this.selectGameModeFromMenu('goose'));
-        }
-        
-        if (selectArtillery) {
-            selectArtillery.addEventListener('click', () => this.selectGameModeFromMenu('artillery'));
         }
         
         // Lobby events
@@ -535,29 +524,6 @@ class NumberLineDuelClient {
             // Could display Goose games differently if needed
             this.displayGamesList(games);
         });
-
-        // Artillery Game Socket Listeners
-        this.socket.on('artilleryMatchFound', (data: { roomId: string; state: any }) => {
-            console.log('🎯 Artillery match found:', data.roomId);
-            // Artillery game client handles its own state
-        });
-    }
-
-    private showArtilleryGame(): void {
-        console.log('🎯 Initializing Artillery game...');
-        // Import and initialize Artillery game dynamically
-        import('./artillery-game').then(({ ArtilleryGameClient }) => {
-            console.log('📦 ArtilleryGameClient module loaded');
-            this.artilleryGame = new ArtilleryGameClient(this.socket);
-            console.log('🎯 ArtilleryGameClient instance created');
-            // Show artillery screen
-            this.showScreen('artilleryGameScreen');
-            // Join the matchmaking queue
-            this.artilleryGame.joinQueue();
-            console.log('✅ Artillery game initialized and joined queue');
-        }).catch(error => {
-            console.error('❌ Failed to load ArtilleryGameClient:', error);
-        });
     }
 
     private displayGamesList(games: GameListing[]): void {
@@ -668,13 +634,6 @@ class NumberLineDuelClient {
         this.selectedGameMode = mode;
         console.log('Game mode selected from menu:', mode);
         
-        // Artillery uses matchmaking, not lobby
-        if (mode === 'artillery') {
-            console.log('Artillery mode selected - starting matchmaking');
-            this.showArtilleryGame();
-            return;
-        }
-        
         // Update lobby title based on mode
         const lobbyTitle = document.getElementById('lobbyTitle');
         if (lobbyTitle) {
@@ -700,10 +659,6 @@ class NumberLineDuelClient {
         if (this.selectedGameMode === 'goose') {
             console.log('Emitting createGooseGame');
             this.socket.emit('createGooseGame', this.playerName);
-        } else if (this.selectedGameMode === 'artillery') {
-            console.log('Joining Artillery Queue');
-            // Artillery uses matchmaking instead of lobbies
-            this.showArtilleryGame();
         } else {
             console.log('Emitting createGame (Number Line)');
             this.socket.emit('createGame', this.playerName);
