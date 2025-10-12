@@ -1,4 +1,4 @@
-import { GameState, Card as CardType } from '../../shared/types';
+import { GameState, Card as CardType } from '../../../../shared/types';
 
 export class UIManager {
     private centralCardCallbacks: ((cardId: string) => void)[] = [];
@@ -111,7 +111,7 @@ export class UIManager {
     }
 
     private updatePlayerHand(gameState: GameState, playerId: string): void {
-        const player = gameState.players.find(p => p.id === playerId);
+        const player = gameState.players.find((p: any) => p.id === playerId);
         const container = document.getElementById('playerHand')!;
         container.innerHTML = '';
         
@@ -119,7 +119,7 @@ export class UIManager {
             const isMyTurn = gameState.currentPlayerId === playerId;
             const maxPosition = gameState.maxPosition || 50;
             
-            player.hand.forEach(card => {
+            player.hand.forEach((card: CardType) => {
                 const cardElement = this.createCardElement(card, isMyTurn);
                 
                 // Check if this card would be an illegal move

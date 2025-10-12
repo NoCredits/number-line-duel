@@ -1,4 +1,4 @@
-import { GameState, Card as CardType } from '../../shared/types';
+import { GameState, Card as CardType } from '../../../../shared/types';
 import { UIManager } from './ui';
 
 export class GameClient {

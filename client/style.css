@@ -1786,3 +1786,193 @@ button.loading::after {
         padding: 20px;
     }
 }
+/* ===========================================
+    ARTILLERY DUEL STYLES
+   =========================================== */
+
+.difficulty-selector {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    margin: 20px 0;
+}
+
+.difficulty-btn {
+    flex: 1;
+    max-width: 200px;
+    padding: 20px;
+    border: 2px solid transparent;
+    border-radius: 12px;
+    background: var(--bg-overlay);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: center;
+}
+
+.difficulty-btn:hover {
+    transform: translateY(-5px);
+    background: var(--bg-overlay-hover);
+}
+
+.difficulty-btn.active {
+    border-color: var(--primary-color);
+    background: var(--bg-overlay-hover);
+    box-shadow: 0 0 20px rgba(102, 126, 234, 0.3);
+}
+
+.difficulty-icon {
+    font-size: 32px;
+    margin-bottom: 10px;
+}
+
+.difficulty-name {
+    font-size: 18px;
+    font-weight: bold;
+    margin-bottom: 5px;
+    color: var(--text-light);
+}
+
+.difficulty-desc {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.artillery-game-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+    gap: 20px;
+}
+
+.artillery-header {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 15px;
+    background: var(--bg-overlay);
+    border-radius: 12px;
+}
+
+.artillery-header h1 {
+    flex: 1;
+    text-align: center;
+    font-size: 28px;
+}
+
+#artilleryCanvas {
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    border-radius: 12px;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+    background: #87CEEB;
+}
+
+.artillery-controls {
+    display: flex;
+    gap: 30px;
+    align-items: center;
+    padding: 20px;
+    background: var(--bg-overlay);
+    border-radius: 12px;
+    width: 100%;
+    max-width: 1000px;
+}
+
+.control-group {
+    flex: 1;
+}
+
+.control-group label {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    color: var(--text-light);
+}
+
+.control-group label span:first-child {
+    font-weight: bold;
+    font-size: 14px;
+}
+
+.control-group input[type="range"] {
+    width: 100%;
+    height: 8px;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.2);
+    outline: none;
+    cursor: pointer;
+}
+
+.control-group input[type="range"]::-webkit-slider-thumb {
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--primary-color);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.control-group input[type="range"]::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
+    background: var(--accent-color);
+}
+
+#artilleryAngleValue,
+#artilleryPowerValue {
+    font-size: 18px;
+    font-weight: bold;
+    color: var(--accent-color);
+}
+
+.fire-btn {
+    padding: 15px 40px;
+    font-size: 20px;
+    font-weight: bold;
+    border: none;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #ff6b6b, #ff8e53);
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 8px rgba(255, 107, 107, 0.3);
+}
+
+.fire-btn:hover:not(:disabled) {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 12px rgba(255, 107, 107, 0.5);
+}
+
+.fire-btn:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+.fire-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+#queueStatus {
+    padding: 10px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    font-size: 16px;
+    color: var(--text-light);
+}
+
+/* Artillery Duel Styles */
+.difficulty-selector { display: flex; gap: 15px; justify-content: center; margin: 20px 0; }
+.difficulty-btn { flex: 1; max-width: 200px; padding: 20px; border: 2px solid transparent; border-radius: 12px; background: var(--bg-overlay); cursor: pointer; transition: all 0.3s ease; text-align: center; }
+.difficulty-btn:hover { transform: translateY(-5px); background: var(--bg-overlay-hover); }
+.difficulty-btn.active { border-color: var(--primary-color); background: var(--bg-overlay-hover); box-shadow: 0 0 20px rgba(102, 126, 234, 0.3); }
+.difficulty-icon { font-size: 32px; margin-bottom: 10px; }
+.difficulty-name { font-size: 18px; font-weight: bold; margin-bottom: 5px; color: var(--text-light); }
+.difficulty-desc { font-size: 14px; color: rgba(255, 255, 255, 0.7); }
+.artillery-game-container { display: flex; flex-direction: column; align-items: center; padding: 20px; gap: 20px; }
+#artilleryCanvas { border: 3px solid rgba(255, 255, 255, 0.3); border-radius: 12px; box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3); }
+.artillery-controls { display: flex; gap: 30px; align-items: center; padding: 20px; background: var(--bg-overlay); border-radius: 12px; width: 100%; max-width: 1000px; }
+.control-group { flex: 1; }
+.control-group label { display: flex; flex-direction: column; gap: 10px; color: var(--text-light); }
+.fire-btn { padding: 15px 40px; font-size: 20px; font-weight: bold; border: none; border-radius: 12px; background: linear-gradient(135deg, #ff6b6b, #ff8e53); color: white; cursor: pointer; transition: all 0.3s ease; }
+.fire-btn:hover:not(:disabled) { transform: translateY(-3px); }

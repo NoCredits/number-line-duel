@@ -9,3 +9,6 @@ export * from './common';
 
 // Goose Duel types
 export * from './goose-duel';
+
+// Artillery Duel types
+export * from './artillery-duel';

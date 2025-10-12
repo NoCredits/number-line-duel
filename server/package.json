@@ -2,11 +2,11 @@
   "name": "number-line-duel-server",
   "version": "1.0.0",
   "description": "Number Line Duel game server",
-  "main": "dist/core/Server.js",
+  "main": "dist/server/src/core/Server.js",
   "scripts": {
     "dev": "ts-node src/core/Server.ts",
     "build": "tsc",
-    "start": "node dist/core/Server.js"
+    "start": "node dist/server/src/core/Server.js"
   },
   "dependencies": {
     "express": "^4.18.2",

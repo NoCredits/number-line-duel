@@ -6,8 +6,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const http_1 = require("http");
 const socket_io_1 = require("socket.io");
-const Game_1 = require("./Game");
-const GooseGame_1 = require("./GooseGame");
+const NumberLineGame_1 = require("../games/number-line/NumberLineGame");
+const GooseGame_1 = require("../games/goose-duel/GooseGame");
+const ArtilleryGame_1 = require("../games/artillery-duel/ArtilleryGame");
 const path_1 = __importDefault(require("path"));
 const app = (0, express_1.default)();
 const httpServer = (0, http_1.createServer)(app);
@@ -27,6 +28,8 @@ if (process.env.NODE_ENV === 'production') {
 }
 const games = new Map();
 const gooseGames = new Map();
+const artilleryGames = new Map();
+const artilleryQueue = new Map();
 const gameCreators = new Map();
 // Helper function to get available games list
 function getAvailableGames() {
@@ -63,11 +66,52 @@ function getAvailableGooseGames() {
     });
     return availableGames.sort((a, b) => b.createdAt - a.createdAt);
 }
+// Helper function to calculate projectile trajectory
+function calculateTrajectory(angle, power, startPos, terrain, isPlayer1, wind) {
+    const GRAVITY = 9.81;
+    const TIME_STEP = 0.1;
+    const CANVAS_WIDTH = 1000;
+    const CANVAS_HEIGHT = 600;
+    const points = [];
+    // Calculate nozzle position
+    const terrainY = terrain[Math.floor(startPos.x)] || 500;
+    const tankY = terrainY - 30;
+    const barrelLength = 25;
+    const adjustedAngle = isPlayer1 ? angle : (180 - angle);
+    const barrelRad = adjustedAngle * Math.PI / 180;
+    const nozzleX = startPos.x + Math.cos(barrelRad) * (barrelLength + 8);
+    const nozzleY = tankY + 8 - Math.sin(barrelRad) * (barrelLength + 8);
+    const rad = adjustedAngle * Math.PI / 180;
+    const vx = power * Math.cos(rad) * 2;
+    const vy = -power * Math.sin(rad) * 2;
+    let windVx = 0;
+    let windVy = 0;
+    if (wind) {
+        const windRad = wind.direction * Math.PI / 180;
+        windVx = Math.cos(windRad) * wind.speed * 0.3;
+        windVy = -Math.sin(windRad) * wind.speed * 0.1;
+    }
+    let t = 0;
+    while (true) {
+        t += TIME_STEP;
+        const x = nozzleX + vx * t + windVx * t * t;
+        const y = nozzleY + vy * t + 0.5 * GRAVITY * t * t + windVy * t * t;
+        if (x >= CANVAS_WIDTH || x < 0 || y >= CANVAS_HEIGHT) {
+            break;
+        }
+        if (x >= 0 && x < terrain.length && y >= terrain[Math.floor(x)]) {
+            points.push({ x: Math.round(x), y: Math.round(y) });
+            break;
+        }
+        points.push({ x: Math.round(x), y: Math.round(y) });
+    }
+    return points;
+}
 io.on('connection', (socket) => {
     console.log('Player connected:', socket.id);
     socket.on('createGame', (playerName) => {
         const gameId = Math.random().toString(36).substr(2, 6).toUpperCase();
-        const game = new Game_1.Game();
+        const game = new NumberLineGame_1.Game();
         game.addPlayer(socket.id, playerName);
         games.set(gameId, game);
         gameCreators.set(gameId, { playerName, createdAt: Date.now() });
@@ -279,6 +323,154 @@ io.on('connection', (socket) => {
             action: 'skipTurn'
         });
     });
+    // ==========================================
+    // 🎯 ARTILLERY DUEL SOCKET HANDLERS
+    // ==========================================
+    socket.on('artilleryJoinQueue', (data) => {
+        const difficulty = data?.difficulty || 'medium';
+        console.log(`🎯 Player ${socket.id} joining Artillery queue (${difficulty})`);
+        // Add to queue
+        artilleryQueue.set(socket.id, { socket, difficulty });
+        // Try to match with someone in the same difficulty
+        let matched = false;
+        artilleryQueue.forEach((queuedPlayer, playerId) => {
+            if (playerId !== socket.id && queuedPlayer.difficulty === difficulty && !matched) {
+                matched = true;
+                // Create game
+                const gameId = Math.random().toString(36).substr(2, 6).toUpperCase();
+                const game = new ArtilleryGame_1.ArtilleryGame(gameId, `artillery_${Date.now()}`, difficulty);
+                // Add both players
+                game.addPlayer(socket.id, `Player 1`);
+                game.addPlayer(playerId, `Player 2`);
+                // Join both to room
+                socket.join(gameId);
+                queuedPlayer.socket.join(gameId);
+                // Remove from queue
+                artilleryQueue.delete(socket.id);
+                artilleryQueue.delete(playerId);
+                // Store game
+                artilleryGames.set(gameId, game);
+                // Notify both players
+                io.to(gameId).emit('artilleryMatchFound', {
+                    roomId: gameId,
+                    state: game.getGameState()
+                });
+                console.log(`🎯 Artillery match created: ${gameId} (${difficulty})`);
+            }
+        });
+        if (!matched) {
+            socket.emit('artilleryQueueJoined', {
+                position: artilleryQueue.size,
+                difficulty,
+                message: 'Waiting for opponent...'
+            });
+        }
+    });
+    socket.on('artilleryFire', (data) => {
+        const game = artilleryGames.get(data.gameId);
+        if (!game) {
+            socket.emit('error', { message: 'Game not found' });
+            return;
+        }
+        const currentPlayer = game.getCurrentPlayer();
+        if (currentPlayer.id !== socket.id) {
+            socket.emit('error', { message: 'Not your turn' });
+            return;
+        }
+        if (data.angle < 0 || data.angle > 90 || data.power < 1 || data.power > 100) {
+            socket.emit('error', { message: 'Invalid angle or power' });
+            return;
+        }
+        game.pauseTimer();
+        const shotId = `${data.gameId}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        game.setCurrentShotId(shotId);
+        // Calculate trajectory
+        const trajectory = calculateTrajectory(data.angle, data.power, currentPlayer.pos, game.getTerrain(), game.getGameState().turn === 'p1', game.getWind());
+        // Emit trajectory
+        io.to(data.gameId).emit('artilleryShotFired', {
+            trajectory,
+            shooter: game.getGameState().turn,
+            shooterId: currentPlayer.id,
+            shotId,
+            angle: data.angle,
+            power: data.power
+        });
+    });
+    socket.on('artilleryHitConfirmed', (data) => {
+        const game = artilleryGames.get(data.roomId);
+        if (!game)
+            return;
+        const currentPlayer = game.getCurrentPlayer();
+        if (currentPlayer.id !== socket.id)
+            return;
+        if (data.shotId && game.hasProcessedShot(data.shotId))
+            return;
+        if (game.isWaitingForTurnEnd())
+            return;
+        game.setWaitingForTurnEnd(true);
+        if (data.shotId)
+            game.addProcessedShotId(data.shotId);
+        // Apply damage
+        const victim = game.getGameState().players.find(p => (data.victim === 'p1' && p === game.getGameState().players[0]) ||
+            (data.victim === 'p2' && p === game.getGameState().players[1]));
+        if (victim) {
+            victim.health = data.health;
+            io.to(data.roomId).emit('artilleryHit', {
+                victim: data.victim,
+                damage: data.damage,
+                health: data.health,
+                isDead: data.health <= 0
+            });
+            if (data.health <= 0) {
+                const winner = game.checkGameOver();
+                io.to(data.roomId).emit('artilleryGameOver', {
+                    winner,
+                    reason: 'elimination'
+                });
+                artilleryGames.delete(data.roomId);
+                return;
+            }
+        }
+        // Switch turns
+        setTimeout(() => {
+            const oldWind = { ...game.getWind() };
+            game.switchTurn();
+            const windChanged = oldWind.speed !== game.getWind().speed || oldWind.direction !== game.getWind().direction;
+            io.to(data.roomId).emit('artilleryTurnChanged', {
+                turn: game.getGameState().turn,
+                windChanged,
+                newWind: game.getWind()
+            });
+            io.to(data.roomId).emit('artilleryGameState', game.getGameState());
+        }, 1000);
+    });
+    socket.on('artilleryMissConfirmed', (data) => {
+        const game = artilleryGames.get(data.roomId);
+        if (!game)
+            return;
+        const currentPlayer = game.getCurrentPlayer();
+        if (currentPlayer.id !== socket.id)
+            return;
+        if (data.shotId && game.hasProcessedShot(data.shotId))
+            return;
+        if (game.isWaitingForTurnEnd())
+            return;
+        game.setWaitingForTurnEnd(true);
+        if (data.shotId)
+            game.addProcessedShotId(data.shotId);
+        // Switch turns
+        setTimeout(() => {
+            const oldWind = { ...game.getWind() };
+            game.switchTurn();
+            const windChanged = oldWind.speed !== game.getWind().speed || oldWind.direction !== game.getWind().direction;
+            io.to(data.roomId).emit('artilleryTurnChanged', {
+                turn: game.getGameState().turn,
+                windChanged,
+                newWind: game.getWind()
+            });
+            io.to(data.roomId).emit('artilleryGameState', game.getGameState());
+        }, 1000);
+    });
     socket.on('disconnect', () => {
         console.log('Player disconnected:', socket.id);
         // Clean up Number Line Duel games when players disconnect
@@ -305,6 +497,19 @@ io.on('connection', (socket) => {
                 io.to(gameId).emit('gooseGameOver', {
                     winner: null,
                     reason: 'Player disconnected'
+                });
+            }
+        });
+        // Clean up Artillery games when players disconnect
+        artilleryQueue.delete(socket.id);
+        artilleryGames.forEach((game, gameId) => {
+            const state = game.getGameState();
+            const hasPlayer = state.players.some(p => p.id === socket.id);
+            if (hasPlayer) {
+                artilleryGames.delete(gameId);
+                io.to(gameId).emit('artilleryGameOver', {
+                    winner: null,
+                    reason: 'player_disconnected'
                 });
             }
         });
